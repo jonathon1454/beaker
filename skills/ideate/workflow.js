@@ -135,7 +135,23 @@ async function saveIdeation(projectSlug, brief, analysis, synthesis) {
 
 // ===== WORKFLOW EXECUTION (top-level script) =====
 
-const { brief, projectSlug } = args;
+/**
+ * Workflow API Globals
+ *
+ * The following globals are available in the workflow execution context:
+ *
+ * - `args`: Object containing workflow input arguments passed from the skill
+ * - `agent(prompt, options)`: Spawn a subagent to execute a task. Options:
+ *     - label: Short identifier for logging
+ *     - schema: JSON schema for structured output validation
+ *     - subagent_type: Agent type to use (e.g., 'general-purpose')
+ * - `parallel(tasks)`: Execute array of functions concurrently, returns array of results
+ * - `phase(title)`: Mark the start of a new workflow phase for progress tracking
+ * - `log(message)`: Log a message to the workflow execution console
+ */
+
+const { brief } = args;
+const projectSlug = args.projectSlug || args.brief.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '').slice(0, 50);
 
 if (!brief) {
   throw new Error('Required argument "brief" missing');
@@ -227,9 +243,14 @@ ${JSON.stringify(USER_IMPACT_SCHEMA, null, 2)}`, {
   })
 ]);
 
+// Guard against failed subagents
 const assumptions = analysisResults[0];
 const constraints = analysisResults[1];
 const userImpact = analysisResults[2];
+
+if (!assumptions || !constraints || !userImpact) {
+  throw new Error('One or more analysis subagents failed. Cannot proceed.');
+}
 
 log('Analysis complete. Synthesizing findings...');
 

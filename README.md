@@ -48,6 +48,8 @@ Beaker remembers team patterns and project context across sessions. Tell it thin
 
 It saves them to `${CLAUDE_PLUGIN_DATA}/memory.md` and applies them to future work.
 
+**Note:** The `CLAUDE_PLUGIN_DATA` environment variable is set by Claude Code and typically points to `~/.claude/plugin-data/beaker`.
+
 ## Design System
 
 Beaker uses **Zendesk Flora** as the primary design system, falling back to Garden only when Flora doesn't provide the needed component.
@@ -129,6 +131,7 @@ The workflow script expects:
 - The Workflow API (`agent()`, `parallel()`, `phase()`, `log()`) is only available in Claude Code's plugin execution environment
 - Direct Node.js execution of `workflow.js` will fail due to missing Workflow API globals
 - Skills must be invoked through Claude Code session, not via direct script execution
+- Reference files `garden-fallbacks.md` and `research-sources.md` mentioned in the design plan are planned for future releases
 
 ## License
 

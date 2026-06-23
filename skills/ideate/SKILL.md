@@ -32,7 +32,7 @@ Example:
 3. **Synthesizes findings** into:
    - Clear problem statement (what, why, for whom, success criteria)
    - 2-3 concept directions with strengths and trade-offs
-4. **Saves artifacts** to `${CLAUDE_PLUGIN_DATA}/projects/<project-slug>/ideation.md`
+4. **Saves artifacts** to `${CLAUDE_PLUGIN_DATA}/projects/<project-slug>/ideation-YYYY-MM-DD.md`
 
 ## Output Format
 
