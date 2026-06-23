@@ -1,0 +1,59 @@
+---
+description: Problem framing and concept exploration before research or design work
+---
+
+# Ideate Skill
+
+Frame the design problem before jumping to solutions. This skill helps you:
+- Challenge implicit assumptions
+- Map project constraints (technical, business, team, timeline)
+- Analyze user impact
+- Synthesize a clear problem statement
+- Explore 2-3 concept directions with trade-offs
+
+## Usage
+
+```
+/beaker:ideate "Your project brief here"
+```
+
+Example:
+```
+/beaker:ideate "Improve ticket assignment flow for agents managing high-volume queues"
+```
+
+## What This Skill Does
+
+1. **Loads context** — Reads your Beaker memory and any existing project context
+2. **Analyzes in parallel:**
+   - Challenges assumptions (what might be wrong?)
+   - Maps constraints (what limits this?)
+   - Assesses user impact (who benefits and how?)
+3. **Synthesizes findings** into:
+   - Clear problem statement (what, why, for whom, success criteria)
+   - 2-3 concept directions with strengths and trade-offs
+4. **Saves artifacts** to `${CLAUDE_PLUGIN_DATA}/projects/<project-slug>/ideation.md`
+
+## Output Format
+
+You'll receive:
+- **Problem Statement** with what/why/for whom/success criteria
+- **Concept Directions** (2-3 options) with strengths, trade-offs, and recommendation
+- Path to saved ideation document
+
+## Next Steps
+
+After ideation:
+- Run `/beaker:research <topic>` to research specific areas
+- Run `/beaker:design <concept>` to translate chosen concept into component architecture
+- Or continue with `/beaker:project` for full-cycle workflow
+
+## Tips
+
+- **Be specific in your brief** — Include user roles, current pain points, desired outcomes
+- **Mention constraints upfront** if known — "Must work on mobile", "Using Flora components only"
+- **Reference related work** if it exists — "Similar to X but for Y users"
+
+## Memory Integration
+
+This skill reads and respects your team patterns and design constraints from memory. It will flag when assumptions conflict with established patterns.
