@@ -1,0 +1,15 @@
+{
+  "name": "beaker",
+  "version": "1.0.0",
+  "description": "Design assistant for Zendesk Labs — brainstorming, research, design, prototyping, and validation",
+  "author": {
+    "name": "Zendesk Labs"
+  },
+  "repository": "https://github.com/zendesk/zendesk-labs-beaker",
+  "license": "MIT",
+  "keywords": ["design", "research", "prototyping", "zendesk", "flora", "garden"],
+  "dependencies": [
+    "figma@claude-plugins-official",
+    "context7@claude-plugins-official"
+  ]
+}
