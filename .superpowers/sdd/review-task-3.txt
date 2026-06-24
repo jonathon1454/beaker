@@ -1,0 +1,81 @@
+c15baad feat: add memory system templates
+ references/memory-template.md          | 33 +++++++++++++++++++++++++++++++++
+ references/project-context-template.md | 32 ++++++++++++++++++++++++++++++++
+ 2 files changed, 65 insertions(+)
+diff --git a/references/memory-template.md b/references/memory-template.md
+new file mode 100644
+index 0000000..592d337
+--- /dev/null
++++ b/references/memory-template.md
+@@ -0,0 +1,33 @@
++# Beaker Memory
++
++Persistent context that Beaker remembers across sessions.
++
++## Team Patterns
++
++Examples:
++- Never use modals for destructive actions (team standard, all products)
++- Settings pages use left sidebar nav + content area (established pattern)
++
++## Design Constraints
++
++Examples:
++- Mobile-first for customer-facing features
++- Desktop-only acceptable for admin/agent tools
++- A11y is non-negotiable — WCAG 2.1 AA minimum
++
++## Design System
++
++- Flora primary, Garden fallback only when Flora lacks the component
++- Follow techmenu.zende.sk for endorsed technologies
++
++## Research Sources
++
++- Primary competitive references: [Add products to check regularly]
++- Internal Slack channels: #design, #labs, #accessibility
++- Key stakeholders: [Names/roles for specific domains]
++
++## Process Preferences
++
++- Always validate component choices against user research before proposing
++- Present user preference suggestions during brainstorming, don't auto-apply
++- Flag when personal preference conflicts with user research
+diff --git a/references/project-context-template.md b/references/project-context-template.md
+new file mode 100644
+index 0000000..a011b4e
+--- /dev/null
++++ b/references/project-context-template.md
+@@ -0,0 +1,32 @@
++# Project: [Project Name]
++
++## Overview
++
++Brief description of what this project is building.
++
++## Stakeholders
++
++- Designer: 
++- PM: 
++- Engineering lead: 
++- Key reviewers: 
++
++## Timeline
++
++- Kickoff: 
++- Design review: 
++- Implementation start: 
++- Target ship: 
++
++## Constraints
++
++- Technical: 
++- Business: 
++- Team capacity: 
++
++## Related Work
++
++- PRs: 
++- Slack discussions: 
++- Design docs: 
++- Figma files: 

@@ -1,0 +1,172 @@
+9592c1f feat: add Flora and Zendesk pattern reference docs
+ references/flora-quickstart.md | 75 ++++++++++++++++++++++++++++++++++++++
+ references/zendesk-patterns.md | 81 ++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 156 insertions(+)
+diff --git a/references/flora-quickstart.md b/references/flora-quickstart.md
+new file mode 100644
+index 0000000..73405aa
+--- /dev/null
++++ b/references/flora-quickstart.md
+@@ -0,0 +1,75 @@
++# Flora Design System Quick Reference
++
++Zendesk Flora is the primary design system. Check Flora first before falling back to Garden.
++
++## How to Check Flora
++
++Use Context7 to query Flora documentation:
++
++```
++Use context7 to search Flora docs for: [component name or pattern]
++```
++
++Examples:
++- "Flora button component"
++- "Flora navigation patterns"
++- "Flora color tokens"
++- "Flora spacing scale"
++
++## Common Component Categories
++
++### Layout
++- Grid (12-column)
++- Flex utilities
++- Spacing tokens (4, 8, 12, 16, 20, 32px scale)
++
++### Navigation
++- Tabs
++- Breadcrumbs
++- Pagination
++- Sidebar
++
++### Forms
++- Input
++- Select
++- Checkbox
++- Radio
++- Toggle
++- Form validation patterns
++
++### Data Display
++- Table
++- List
++- Card/Pane
++- Tag
++- Badge
++- Tooltip
++
++### Actions
++- Button (primary, secondary, tertiary)
++- IconButton
++- Menu/Dropdown
++- Modal
++- Drawer
++
++### Feedback
++- Alert
++- Toast/Notification
++- Loading states
++- Empty states
++
++## When Flora Doesn't Have It
++
++1. **Check Garden** — Query Context7 for Garden equivalent
++2. **Document the gap** — Note in your design spec that this is a Garden fallback
++3. **Consider custom** — Only if neither Flora nor Garden provides it
++
++## Design Tokens
++
++Flora uses design tokens for:
++- **Colors** — Semantic color names, not hex values
++- **Spacing** — 4px scale (xs: 4px, sm: 8px, md: 12px, lg: 16px, xl: 20px, xxl: 32px)
++- **Typography** — Font sizes, weights, line heights
++- **Elevation** — Shadow depths for layering
++
++Always use tokens, never hardcoded values.
+diff --git a/references/zendesk-patterns.md b/references/zendesk-patterns.md
+new file mode 100644
+index 0000000..8086869
+--- /dev/null
++++ b/references/zendesk-patterns.md
+@@ -0,0 +1,81 @@
++# Zendesk Product Design Patterns
++
++Common patterns across Zendesk products. Follow these for consistency.
++
++## Layout Patterns
++
++### Settings Pages
++- **Pattern:** Left sidebar navigation + content area
++- **Sidebar:** Vertical nav with nested sections
++- **Content:** Form fields with clear section headers
++- **Actions:** Sticky footer with Save/Cancel buttons
++
++### Admin Tools
++- **Pattern:** Desktop-first, full-featured
++- **Layout:** Multi-column when screen allows
++- **Navigation:** Top bar + side nav
++- **Bulk actions:** Toolbar above data tables
++
++### Agent/Customer-Facing
++- **Pattern:** Mobile-first, focused workflows
++- **Layout:** Single column, progressive disclosure
++- **Navigation:** Bottom tabs on mobile, top bar on desktop
++- **Actions:** Primary action always visible
++
++## Navigation Patterns
++
++### Settings Navigation
++- Use **Tabs** for top-level switching (Account, Security, Notifications)
++- Use **Left sidebar** for nested settings within a section
++- Avoid Accordion for settings nav (usability issues with deep nesting)
++
++### Bulk Actions
++- **Toolbar pattern:** Checkbox select → Toolbar appears with actions
++- Always include: Select All, Clear Selection, Action count ("3 items selected")
++- Destructive actions require confirmation modal
++
++## Modal Usage
++
++### When to Use Modals
++- Quick create forms (< 5 fields)
++- Confirmations (especially destructive actions)
++- Focused tasks that benefit from blocking other UI
++
++### When NOT to Use Modals
++- Destructive actions without confirmation (use confirmation modal pattern)
++- Long forms (> 5 fields) — use drawer or full page
++- Multi-step workflows — use drawer or dedicated page
++
++## Form Patterns
++
++### Validation
++- Inline validation on blur
++- Error summary at top of form if multiple errors
++- Disable submit button until form is valid
++
++### Required Fields
++- Mark with asterisk (*)
++- Include hint text: "* Required fields"
++- Don't rely on color alone
++
++### Field Sizing
++- **Short inputs** (zip code, quantity): width matches expected content
++- **Medium inputs** (name, email): default width
++- **Long inputs** (address, notes): full-width or textarea
++
++## Accessibility Requirements
++
++- WCAG 2.1 AA minimum
++- Keyboard navigation for all interactions
++- Focus indicators on all interactive elements
++- Color contrast ratios: 4.5:1 for text, 3:1 for UI components
++- ARIA labels for icon-only buttons
++- Screen reader announcements for dynamic content changes
++
++## Localization Considerations
++
++- Allow 30% text expansion for translations
++- RTL support for Arabic/Hebrew
++- Date/number formats vary by locale
++- Icon meanings vary by culture (no thumbs-up, hand gestures)
++- Avoid text in images

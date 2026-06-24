@@ -1,0 +1,117 @@
+c27bf54 feat: initialize Beaker plugin structure
+Initial commit - no diff
+commit c27bf543d226f67bbf733d5a6ae42a86ce026229
+Author: Claude Sonnet 4.5 <noreply@anthropic.com>
+Date:   Tue Jun 23 15:49:10 2026 -0400
+
+    feat: initialize Beaker plugin structure
+    
+    Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+
+ .claude-plugin/plugin.json | 15 ++++++++++++
+ README.md                  | 57 ++++++++++++++++++++++++++++++++++++++++++++++
+ agents/.gitkeep            |  0
+ references/.gitkeep        |  0
+ skills/.gitkeep            |  0
+ 5 files changed, 72 insertions(+)
+commit c27bf543d226f67bbf733d5a6ae42a86ce026229
+Author: Claude Sonnet 4.5 <noreply@anthropic.com>
+Date:   Tue Jun 23 15:49:10 2026 -0400
+
+    feat: initialize Beaker plugin structure
+    
+    Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+
+diff --git a/.claude-plugin/plugin.json b/.claude-plugin/plugin.json
+new file mode 100644
+index 0000000..a299a8a
+--- /dev/null
++++ b/.claude-plugin/plugin.json
+@@ -0,0 +1,15 @@
++{
++  "name": "beaker",
++  "version": "1.0.0",
++  "description": "Design assistant for Zendesk Labs — brainstorming, research, design, prototyping, and validation",
++  "author": {
++    "name": "Zendesk Labs"
++  },
++  "repository": "https://github.com/zendesk/zendesk-labs-beaker",
++  "license": "MIT",
++  "keywords": ["design", "research", "prototyping", "zendesk", "flora", "garden"],
++  "dependencies": [
++    "figma@claude-plugins-official",
++    "context7@claude-plugins-official"
++  ]
++}
+diff --git a/README.md b/README.md
+new file mode 100644
+index 0000000..5e155c8
+--- /dev/null
++++ b/README.md
+@@ -0,0 +1,57 @@
++# Beaker
++
++Design assistant for Zendesk Labs — supporting solo designers through the complete lifecycle of 0-1 concept development.
++
++## Install
++
++Add this to your `~/.claude/settings.json`:
++
++```json
++{
++  "extraKnownMarketplaces": {
++    "zendesk-labs": {
++      "source": {
++        "source": "github",
++        "repo": "zendesk/zendesk-labs-beaker"
++      }
++    }
++  }
++}
++```
++
++Then install:
++
++```bash
++claude plugin install beaker@zendesk-labs
++```
++
++## Usage
++
++### Ideation
++
++```
++/beaker:ideate "Your project brief here"
++```
++
++Beaker will:
++1. Analyze your brief for goals, constraints, assumptions
++2. Challenge assumptions and map constraints
++3. Present 2-3 concept directions with trade-offs
++4. Save the problem statement and chosen direction
++
++## Memory
++
++Beaker remembers team patterns and project context across sessions. Tell it things like:
++
++- "Team standard: never use modals for destructive actions"
++- "Design constraint: mobile-first for customer features"
++
++It saves them to `${CLAUDE_PLUGIN_DATA}/memory.md` and applies them to future work.
++
++## Design System
++
++Beaker uses **Zendesk Flora** as the primary design system, falling back to Garden only when Flora doesn't provide the needed component.
++
++## License
++
++MIT
+diff --git a/agents/.gitkeep b/agents/.gitkeep
+new file mode 100644
+index 0000000..e69de29
+diff --git a/references/.gitkeep b/references/.gitkeep
+new file mode 100644
+index 0000000..e69de29
+diff --git a/skills/.gitkeep b/skills/.gitkeep
+new file mode 100644
+index 0000000..e69de29

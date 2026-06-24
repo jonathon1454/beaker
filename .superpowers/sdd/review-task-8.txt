@@ -1,0 +1,464 @@
+b685679 docs: add local testing instructions and fix workflow
+ README.md                 |  78 +++++++++++++++
+ skills/ideate/workflow.js | 236 ++++++++++++++++++++++++++++------------------
+ 2 files changed, 221 insertions(+), 93 deletions(-)
+diff --git a/README.md b/README.md
+index 5e155c8..e9f9589 100644
+--- a/README.md
++++ b/README.md
+@@ -45,13 +45,91 @@ Beaker remembers team patterns and project context across sessions. Tell it thin
+ 
+ - "Team standard: never use modals for destructive actions"
+ - "Design constraint: mobile-first for customer features"
+ 
+ It saves them to `${CLAUDE_PLUGIN_DATA}/memory.md` and applies them to future work.
+ 
+ ## Design System
+ 
+ Beaker uses **Zendesk Flora** as the primary design system, falling back to Garden only when Flora doesn't provide the needed component.
+ 
++## Testing
++
++### Local Installation
++
++For plugin development, you can install Beaker from a local directory:
++
++1. Add to your `~/.claude/settings.json`:
++
++```json
++{
++  "extraKnownMarketplaces": {
++    "beaker-local": {
++      "source": {
++        "source": "directory",
++        "path": "/absolute/path/to/beaker"
++      }
++    }
++  },
++  "enabledPlugins": {
++    "beaker@beaker-local": true
++  }
++}
++```
++
++2. Restart Claude Code to load the plugin
++
++3. Verify installation:
++
++```bash
++claude plugin list
++```
++
++You should see `beaker@beaker-local` in the list.
++
++### Testing the Ideate Skill
++
++The ideate skill uses the Workflow API which requires Claude Code's plugin execution environment. To test:
++
++1. **In a Claude Code session**, invoke the skill:
++
++```
++/beaker:ideate "Your design brief here"
++```
++
++2. **Expected behavior:**
++   - Phase 1: Three parallel analysis subagents (assumptions, constraints, user impact)
++   - Phase 2: Synthesis agent integrating findings into problem statement and concepts
++   - Results saved to `${CLAUDE_PLUGIN_DATA}/projects/{slug}/ideation-{date}.md`
++
++3. **Verify artifacts:**
++
++```bash
++ls -la ~/.claude/plugin-data/beaker/projects/
++```
++
++Each project should contain:
++- `context.md` (project-specific memory)
++- `ideation-{date}.md` (ideation session outputs)
++
++4. **Check memory:**
++
++```bash
++cat ~/.claude/plugin-data/beaker/memory.md
++```
++
++Should contain global team patterns and constraints you've shared.
++
++### Environment Variables
++
++The workflow script expects:
++- `CLAUDE_PLUGIN_DATA`: Set by Claude Code to `~/.claude/plugin-data/{plugin-name}`
++
++### Known Limitations
++
++- The Workflow API (`agent()`, `parallel()`, `phase()`, `log()`) is only available in Claude Code's plugin execution environment
++- Direct Node.js execution of `workflow.js` will fail due to missing Workflow API globals
++- Skills must be invoked through Claude Code session, not via direct script execution
++
+ ## License
+ 
+ MIT
+diff --git a/skills/ideate/workflow.js b/skills/ideate/workflow.js
+index 62eae91..edd7d6f 100644
+--- a/skills/ideate/workflow.js
++++ b/skills/ideate/workflow.js
+@@ -1,24 +1,26 @@
+-import { Agent } from '@anthropic-ai/agent-toolkit';
+-import { readFile } from 'fs/promises';
++import { readFile, mkdir, writeFile } from 'fs/promises';
+ import { join } from 'path';
+ import {
+   ASSUMPTION_SCHEMA,
+   CONSTRAINT_SCHEMA,
+   USER_IMPACT_SCHEMA,
+   SYNTHESIS_SCHEMA
+ } from './schemas.js';
+ 
+-const meta = {
+-  name: 'ideate',
+-  description: 'Parallel ideation workflow: challenge assumptions, map constraints, analyze user impact, synthesize concepts',
+-  phases: ['context_loading', 'parallel_analysis', 'synthesis', 'artifact_save']
++export const meta = {
++  name: 'beaker-ideate',
++  description: 'Problem framing and concept exploration',
++  phases: [
++    { title: 'Analyze', detail: 'Challenge assumptions, map constraints, assess user impact' },
++    { title: 'Synthesize', detail: 'Frame problem statement and explore concept directions' }
++  ]
+ };
+ 
+ /**
+  * Read memory file if it exists
+  */
+ async function readMemory(filePath) {
+   try {
+     return await readFile(filePath, 'utf-8');
+   } catch (err) {
+     if (err.code === 'ENOENT') return null;
+@@ -40,145 +42,208 @@ async function readProjectContext(projectSlug) {
+   let projectContext = null;
+   if (projectSlug) {
+     projectContext = await readMemory(
+       join(pluginData, 'projects', projectSlug, 'context.md')
+     );
+   }
+ 
+   return { globalMemory, projectContext };
+ }
+ 
++/**
++ * Format synthesis data as Markdown
++ */
++function formatSynthesisMarkdown(brief, analysis, synthesis) {
++  const { assumptions, constraints, userImpact } = analysis;
++  const { problem_statement, concepts } = synthesis;
++
++  let md = `# Ideation Session\n\n`;
++  md += `**Date:** ${new Date().toISOString().split('T')[0]}\n\n`;
++  md += `## Design Brief\n\n${brief}\n\n`;
++
++  md += `## Problem Statement\n\n`;
++  md += `**What:** ${problem_statement.what}\n\n`;
++  md += `**Why:** ${problem_statement.why}\n\n`;
++  md += `**For whom:** ${problem_statement.for_whom}\n\n`;
++  md += `**Success looks like:** ${problem_statement.success_looks_like}\n\n`;
++
++  md += `## Concepts\n\n`;
++  concepts.forEach((concept, idx) => {
++    md += `### ${idx + 1}. ${concept.name} (${concept.recommendation})\n\n`;
++    md += `${concept.approach}\n\n`;
++    md += `**Strengths:**\n`;
++    concept.strengths.forEach(s => md += `- ${s}\n`);
++    md += `\n**Trade-offs:**\n`;
++    concept.trade_offs.forEach(t => md += `- ${t}\n`);
++    md += `\n`;
++  });
++
++  md += `## Analysis\n\n`;
++  md += `### Assumptions Challenged\n\n`;
++  assumptions.assumptions.forEach(a => {
++    md += `**Assumption:** ${a.assumption}\n`;
++    md += `- Challenge: ${a.challenge}\n`;
++    md += `- Validation: ${a.validation_approach}\n`;
++    md += `- Risk if wrong: ${a.risk_if_wrong}\n\n`;
++  });
++
++  md += `**Key Questions:**\n`;
++  assumptions.questions.forEach(q => md += `- ${q}\n`);
++  md += `\n`;
++
++  md += `### Constraints Mapped\n\n`;
++  constraints.constraints.forEach(c => {
++    md += `**[${c.category}]** ${c.description}\n`;
++    md += `- Impact: ${c.impact}\n`;
++    md += `- Flexibility: ${c.flexibility}\n\n`;
++  });
++
++  md += `**Opportunities:**\n`;
++  constraints.opportunities.forEach(o => md += `- ${o}\n`);
++  md += `\n`;
++
++  md += `### User Impact\n\n`;
++  userImpact.users.forEach(u => {
++    md += `**${u.persona}**\n`;
++    md += `- Current: ${u.current_state}\n`;
++    md += `- Future: ${u.future_state}\n`;
++    md += `- Value: ${u.value}\n\n`;
++  });
++
++  md += `**Impact Summary:** ${userImpact.impact_summary}\n`;
++
++  return md;
++}
++
+ /**
+  * Save ideation artifacts to project directory
+  */
+-async function saveIdeation(projectSlug, synthesis) {
++async function saveIdeation(projectSlug, brief, analysis, synthesis) {
+   const pluginData = process.env.CLAUDE_PLUGIN_DATA;
+   const projectDir = join(pluginData, 'projects', projectSlug);
+ 
+-  // Create project directory if needed
+-  const { mkdir, writeFile } = await import('fs/promises');
+   await mkdir(projectDir, { recursive: true });
+ 
+   const timestamp = new Date().toISOString().split('T')[0];
+-  const filename = `ideation-${timestamp}.json`;
++  const filename = `ideation-${timestamp}.md`;
++  const filePath = join(projectDir, filename);
+ 
+-  await writeFile(
+-    join(projectDir, filename),
+-    JSON.stringify(synthesis, null, 2),
+-    'utf-8'
+-  );
++  const markdown = formatSynthesisMarkdown(brief, analysis, synthesis);
++  await writeFile(filePath, markdown, 'utf-8');
+ 
+-  return filename;
++  return filePath;
+ }
+ 
+-/**
+- * Main workflow execution
+- */
+-export async function execute(args) {
+-  const { brief, projectSlug } = args;
++// ===== WORKFLOW EXECUTION (top-level script) =====
+ 
+-  if (!brief) {
+-    throw new Error('Required argument "brief" missing');
+-  }
++const { brief, projectSlug } = args;
++
++if (!brief) {
++  throw new Error('Required argument "brief" missing');
++}
+ 
+-  // Phase 1: Load context
+-  const { globalMemory, projectContext } = await readProjectContext(projectSlug);
++log('Loading context...');
++const { globalMemory, projectContext } = await readProjectContext(projectSlug);
+ 
+-  const contextPrompt = `
++const contextPrompt = `
+ **Global Memory:**
+ ${globalMemory || 'No global memory yet'}
+ 
+ **Project Context:**
+ ${projectContext || 'No project context yet'}
+ 
+ **Design Brief:**
+ ${brief}
+ `;
+ 
+-  // Phase 2: Spawn parallel analysis subagents
+-  const [assumptionsResult, constraintsResult, userImpactResult] = await Promise.all([
+-    // Assumption Challenger
+-    Agent({
+-      description: 'Challenge assumptions',
+-      prompt: `You are an assumption challenger. Your job is to identify unstated assumptions in this design brief and challenge them constructively.
++// Phase 1: Parallel Analysis
++phase('Analyze');
++log('Spawning parallel analysis subagents...');
++
++const analysisResults = await parallel([
++  // Assumption Challenger
++  () => agent(`You are an assumption challenger. Your job is to identify unstated assumptions in this design brief and challenge them constructively.
+ 
+ ${contextPrompt}
+ 
+ Review the brief and:
+ 1. Identify 4-6 key assumptions being made
+ 2. For each assumption:
+    - State what we're assuming
+    - Explain why it might be wrong
+    - Suggest how to validate it
+    - Describe the risk if we're wrong
+ 
+ 3. List 3-5 critical questions we must answer before proceeding
+ 
+ Return ONLY valid JSON matching this schema:
+-${JSON.stringify(ASSUMPTION_SCHEMA, null, 2)}`,
+-      model: 'sonnet'
+-    }),
++${JSON.stringify(ASSUMPTION_SCHEMA, null, 2)}`, {
++    label: 'assumptions',
++    schema: ASSUMPTION_SCHEMA,
++    subagent_type: 'general-purpose'
++  }),
+ 
+-    // Constraint Mapper
+-    Agent({
+-      description: 'Map constraints',
+-      prompt: `You are a constraint mapper. Your job is to identify technical, business, and team constraints that will shape this design.
++  // Constraint Mapper
++  () => agent(`You are a constraint mapper. Your job is to identify technical, business, and team constraints that will shape this design.
+ 
+ ${contextPrompt}
+ 
+ Analyze the brief and context to:
+ 1. Identify 5-8 constraints across categories: technical, business, team, timeline, platform, policy
+ 2. For each constraint:
+    - Categorize it
+    - Describe what it is
+    - Explain how it limits the design
+    - Mark flexibility: fixed (cannot change), negotiable (can discuss), preference (can ignore)
+ 
+ 3. Identify 2-4 areas where we have freedom to explore
+ 
+ Return ONLY valid JSON matching this schema:
+-${JSON.stringify(CONSTRAINT_SCHEMA, null, 2)}`,
+-      model: 'sonnet'
+-    }),
++${JSON.stringify(CONSTRAINT_SCHEMA, null, 2)}`, {
++    label: 'constraints',
++    schema: CONSTRAINT_SCHEMA,
++    subagent_type: 'general-purpose'
++  }),
+ 
+-    // User Impact Analyzer
+-    Agent({
+-      description: 'Analyze user impact',
+-      prompt: `You are a user impact analyzer. Your job is to identify who this affects and how it changes their workflow.
++  // User Impact Analyzer
++  () => agent(`You are a user impact analyzer. Your job is to identify who this affects and how it changes their workflow.
+ 
+ ${contextPrompt}
+ 
+ Analyze the brief to:
+ 1. Identify 2-4 user personas affected by this design
+ 2. For each persona:
+    - Describe who they are
+    - Explain their current state (how they work today)
+    - Describe the future state (how this changes their workflow)
+    - Articulate the value this brings them
+ 
+ 3. Write a 2-3 sentence impact summary covering overall user benefit
+ 
+ Return ONLY valid JSON matching this schema:
+-${JSON.stringify(USER_IMPACT_SCHEMA, null, 2)}`,
+-      model: 'sonnet'
+-    })
+-  ]);
++${JSON.stringify(USER_IMPACT_SCHEMA, null, 2)}`, {
++    label: 'userImpact',
++    schema: USER_IMPACT_SCHEMA,
++    subagent_type: 'general-purpose'
++  })
++]);
++
++const assumptions = analysisResults[0];
++const constraints = analysisResults[1];
++const userImpact = analysisResults[2];
+ 
+-  // Parse subagent outputs
+-  const assumptions = JSON.parse(assumptionsResult);
+-  const constraints = JSON.parse(constraintsResult);
+-  const userImpact = JSON.parse(userImpactResult);
++log('Analysis complete. Synthesizing findings...');
+ 
+-  // Phase 3: Synthesis
+-  const synthesisResult = await Agent({
+-    description: 'Synthesize findings',
+-    prompt: `You are a synthesis agent. Your job is to integrate the analysis from three specialist agents into a coherent problem statement and concept directions.
++// Phase 2: Synthesis
++phase('Synthesize');
++
++const synthesis = await agent(`You are a synthesis agent. Your job is to integrate the analysis from three specialist agents into a coherent problem statement and concept directions.
+ 
+ **Original Brief:**
+ ${brief}
+ 
+ **Assumptions Analysis:**
+ ${JSON.stringify(assumptions, null, 2)}
+ 
+ **Constraints Analysis:**
+ ${JSON.stringify(constraints, null, 2)}
+ 
+@@ -200,45 +265,30 @@ Your task:
+    - Trade-offs: 2-4 bullet points on what you give up
+    - Recommendation: "recommended", "viable", or "not_recommended"
+ 
+ Consider:
+ - Fixed constraints must be respected in all concepts
+ - Negotiable constraints can be challenged in some concepts
+ - Address key assumptions and questions from the analysis
+ - Different concepts should explore different areas of flexibility
+ 
+ Return ONLY valid JSON matching this schema:
+-${JSON.stringify(SYNTHESIS_SCHEMA, null, 2)}`,
+-    model: 'sonnet'
+-  });
+-
+-  const synthesis = JSON.parse(synthesisResult);
+-
+-  // Phase 4: Save artifacts
+-  let savedFile = null;
+-  if (projectSlug) {
+-    savedFile = await saveIdeation(projectSlug, {
+-      brief,
+-      analysis: { assumptions, constraints, userImpact },
+-      synthesis,
+-      timestamp: new Date().toISOString()
+-    });
+-  }
+-
+-  // Return structured results
+-  return {
+-    meta,
+-    problem_statement: synthesis.problem_statement,
+-    concepts: synthesis.concepts,
+-    analysis: {
+-      assumptions: assumptions.assumptions,
+-      key_questions: assumptions.questions,
+-      constraints: constraints.constraints,
+-      opportunities: constraints.opportunities,
+-      users: userImpact.users,
+-      impact_summary: userImpact.impact_summary
+-    },
+-    artifacts: {
+-      saved_to: savedFile ? `${projectSlug}/${savedFile}` : null
+-    }
+-  };
++${JSON.stringify(SYNTHESIS_SCHEMA, null, 2)}`, {
++  schema: SYNTHESIS_SCHEMA,
++  subagent_type: 'general-purpose'
++});
++
++log('Synthesis complete. Saving artifacts...');
++
++// Save artifacts
++let savedPath = null;
++if (projectSlug) {
++  savedPath = await saveIdeation(projectSlug, brief, { assumptions, constraints, userImpact }, synthesis);
++  log(`Saved to ${savedPath}`);
+ }
++
++// Return structured results - spread synthesis into result
++return {
++  project_slug: projectSlug,
++  saved_to: savedPath,
++  ...synthesis
++};
